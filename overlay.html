@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+        }
+        /* ফ্লোটিং বক্সের ডিজাইন */
+        .float-box {
+            width: 140px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.85); /* কালো এবং স্বচ্ছ */
+            border: 2px solid #00E676; /* বর্ডার কালার */
+            border-radius: 25px; /* গোল কোণা */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00E676;
+            font-family: monospace;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            
+            /* ইউজার যাতে সিলেক্ট না করে */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="float-box" id="timer">00:00:00</div>
+
+    <script>
+        let seconds = 0;
+        
+        // টাইমার লজিক
+        function updateTimer() {
+            seconds++;
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            
+            document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+        }
+
+        // প্রতি সেকেন্ডে আপডেট হবে
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
