@@ -1,0 +1,65 @@
+name: Build Floating Timer App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Install Dependencies
+        run: npm install
+
+      # ওয়েব ফোল্ডার তৈরি এবং ফাইল কপি করা
+      - name: Prepare Web Assets
+        run: |
+          mkdir -p www
+          cp index.html www/
+          cp overlay.html www/
+          echo "Web assets ready."
+
+      - name: Initialize Capacitor
+        run: |
+          npx cap add android
+          npx cap sync
+
+      # 🔥 সবচেয়ে গুরুত্বপূর্ণ ধাপ: পারমিশন ইনজেকশন 🔥
+      - name: Inject Overlay Permissions
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          
+          # SYSTEM_ALERT_WINDOW পারমিশন যোগ করা (ভাসমান উইন্ডোর জন্য বাধ্যতামূলক)
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />' $MANIFEST
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.ACTION_MANAGE_OVERLAY_PERMISSION" />' $MANIFEST
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />' $MANIFEST
+          
+          echo "Permissions injected successfully."
+        shell: bash
+
+      - name: Build Release APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: floating-timer-apk
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
