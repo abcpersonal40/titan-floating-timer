@@ -23,24 +23,23 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
       
+      # ডিপেন্ডেন্সি এবং প্লাগিন ইনস্টল
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install cordova-open-native-settings
+          npx cap add android
+          npx cap sync
 
-      # ওয়েব অ্যাসেট প্রস্তুত করা
+      # ওয়েব ফাইল কপি করা
       - name: Prepare Web Assets
         run: |
           mkdir -p www
           cp index.html www/
           cp overlay.html www/
-          echo "Web assets copied."
 
-      - name: Initialize Capacitor
-        run: |
-          npx cap add android
-          npx cap sync
-
-      # পারমিশন ইনজেকশন
-      - name: Inject Permissions
+      # পারমিশন ইনজেকশন (System Overlay & Foreground)
+      - name: Inject Manifest Permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />' $MANIFEST
@@ -48,32 +47,19 @@ jobs:
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />' $MANIFEST
         shell: bash
 
-      # 🔥 নতুন ধাপ: অটোমেটিক Keystore তৈরি এবং সাইনিং কনফিগ 🔥
-      - name: Configure Keystore & Signing
+      # 🔥 অটোমেটিক Keystore জেনারেট এবং কনফিগারেশন 🔥
+      - name: Configure Signing
         run: |
-          # ১. একটি টেম্পোরারি Keystore তৈরি করা
-          keytool -genkey -v \
-            -keystore android/app/release.keystore \
-            -alias androidreleasekey \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storetype JKS \
-            -dname "CN=TitanTimer, OU=Dev, O=Titan, L=Dhaka, S=Dhaka, C=BD" \
-            -storepass "password123" \
-            -keypass "password123"
+          keytool -genkey -v -keystore android/app/release.keystore -alias titan -keyalg RSA -keysize 2048 -validity 10000 -storetype JKS -dname "CN=Titan, OU=Dev, O=TitanApp, L=Dhaka, S=Dhaka, C=BD" -storepass "titan123" -keypass "titan123"
 
-          # ২. build.gradle ফাইলে সাইনিং কনফিগ যুক্ত করা
-          GRADLE_FILE="android/app/build.gradle"
-          
-          cat >> $GRADLE_FILE <<EOF
+          cat >> android/app/build.gradle <<EOF
           android {
               signingConfigs {
                   release {
                       storeFile file("release.keystore")
-                      storePassword "password123"
-                      keyAlias "androidreleasekey"
-                      keyPassword "password123"
+                      storePassword "titan123"
+                      keyAlias "titan"
+                      keyPassword "titan123"
                   }
               }
               buildTypes {
@@ -85,8 +71,8 @@ jobs:
           EOF
         shell: bash
 
-      # বিল্ড (এখন সাইন করা হবে)
-      - name: Build Signed Release APK
+      # ফাইনাল বিল্ড
+      - name: Build Release APK
         run: |
           cd android
           chmod +x gradlew
@@ -96,6 +82,5 @@ jobs:
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: titan-timer-signed
+          name: titan-floating-timer-signed
           path: android/app/build/outputs/apk/release/app-release.apk
-          
