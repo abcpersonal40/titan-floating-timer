@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Titan Timer Controller</title>
+    <title>Titan Timer</title>
     <style>
         body {
             background-color: #121212;
@@ -15,54 +15,129 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            user-select: none;
         }
+        h2 { color: #00E676; margin-bottom: 30px; }
+        
         button {
-            background: #2962FF;
-            color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 16px 30px;
             font-size: 18px;
-            border-radius: 8px;
+            border-radius: 50px;
             margin: 10px;
-            width: 80%;
+            width: 85%;
+            max-width: 320px;
             cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-        button.stop { background: #FF1744; }
-        p { color: #888; text-align: center; padding: 20px; }
+        button:active { transform: scale(0.95); }
+
+        .btn-start { background: #2962FF; color: white; }
+        .btn-stop { background: #FF1744; color: white; }
+        
+        /* পারমিশন বাটন (লুকানো থাকবে) */
+        .btn-fix { 
+            background: #FF9100; 
+            color: black; 
+            display: none; 
+            border: 2px solid #FFEA00;
+        }
+
+        button:disabled {
+            background: #333;
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #status { margin-top: 20px; color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <h2>Titan Floating Timer</h2>
-    
-    <button onclick="startOverlay()">🟢 Start Floating Timer</button>
-    <button class="stop" onclick="stopOverlay()">🔴 Stop Timer</button>
+    <h2>⏱️ Titan Floating Timer</h2>
 
-    <p>Note: First time you click Start, allow "Display over other apps" permission.</p>
+    <!-- ১. ফিক্স বাটন (যদি পারমিশন না থাকে) -->
+    <button id="fixBtn" class="btn-fix" onclick="openSettings()">
+        ⚠️ Allow 'Display Over Apps'
+    </button>
+
+    <!-- ২. স্টার্ট বাটন -->
+    <button id="startBtn" class="btn-start" onclick="startOverlay()" disabled>
+        ⏳ System Loading...
+    </button>
+    
+    <!-- ৩. স্টপ বাটন -->
+    <button class="btn-stop" onclick="stopOverlay()">
+        🔴 Stop Timer
+    </button>
+
+    <div id="status">Initializing...</div>
 
     <script>
-        function startOverlay() {
+        let isReady = false;
+
+        // অ্যাপ রেডি হওয়া পর্যন্ত অপেক্ষা
+        document.addEventListener('deviceready', () => {
+            console.log("Device Ready");
+            
+            // ১. প্লাগিন চেক করা
             if (window.overlay) {
-                // ২. overlay.html ফাইলটি লোড করবে
-                window.overlay.open('overlay.html', function (overlayWebView) {
-                    console.log("Overlay started");
-                }, function (err) {
-                    alert("Permission Needed! Please go to Settings > Apps > Titan Timer > 'Display over other apps' -> ALLOW");
-                });
+                isReady = true;
+                const btn = document.getElementById('startBtn');
+                btn.disabled = false;
+                btn.innerText = "🟢 Start Floating Timer";
+                document.getElementById('status').innerText = "System Ready.";
             } else {
-                alert("Plugin not ready yet!");
+                document.getElementById('status').innerText = "Error: Overlay plugin failed!";
+            }
+        }, false);
+
+        // ২. টাইমার চালু করা
+        function startOverlay() {
+            if (!isReady) return;
+
+            // ওভারলে ওপেন করার চেষ্টা
+            window.overlay.open('overlay.html', function () {
+                // সাকসেস
+                document.getElementById('status').innerText = "Overlay is Running";
+                document.getElementById('fixBtn').style.display = 'none'; // ফিক্স বাটন লুকান
+            }, function (err) {
+                // ফেইল (মানে পারমিশন নাই)
+                document.getElementById('status').innerText = "Permission Missing!";
+                document.getElementById('status').style.color = "orange";
+                
+                // ফিক্স বাটন দেখান
+                document.getElementById('fixBtn').style.display = 'flex';
+                alert("Permission Required! Click the Orange Button.");
+            });
+        }
+
+        // ৩. সরাসরি সেটিংসে নিয়ে যাওয়া
+        function openSettings() {
+            if (window.cordova && window.cordova.plugins.settings) {
+                // অ্যান্ড্রয়েড সেটিংসে নিয়ে যাবে
+                window.cordova.plugins.settings.open("action_manage_overlay_permission", 
+                    () => console.log("Settings Opened"),
+                    () => alert("Please go to Settings > Apps > Titan Timer manually.")
+                );
+            } else {
+                alert("Manual: Settings > Apps > Titan Timer > Display over other apps > Allow");
             }
         }
 
         function stopOverlay() {
             if (window.overlay) {
                 window.overlay.close();
+                document.getElementById('status').innerText = "Stopped.";
+                document.getElementById('status').style.color = "#888";
             }
         }
-
-        document.addEventListener('deviceready', () => {
-            console.log("App Ready");
-        });
     </script>
 </body>
 </html>
