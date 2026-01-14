@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titan Timer Controller</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        button {
+            background: #2962FF;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            margin: 10px;
+            width: 80%;
+            cursor: pointer;
+        }
+        button.stop { background: #FF1744; }
+        p { color: #888; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Titan Floating Timer</h2>
+    
+    <button onclick="startOverlay()">🟢 Start Floating Timer</button>
+    <button class="stop" onclick="stopOverlay()">🔴 Stop Timer</button>
+
+    <p>Note: First time you click Start, allow "Display over other apps" permission.</p>
+
+    <script>
+        function startOverlay() {
+            if (window.overlay) {
+                // ২. overlay.html ফাইলটি লোড করবে
+                window.overlay.open('overlay.html', function (overlayWebView) {
+                    console.log("Overlay started");
+                }, function (err) {
+                    alert("Permission Needed! Please go to Settings > Apps > Titan Timer > 'Display over other apps' -> ALLOW");
+                });
+            } else {
+                alert("Plugin not ready yet!");
+            }
+        }
+
+        function stopOverlay() {
+            if (window.overlay) {
+                window.overlay.close();
+            }
+        }
+
+        document.addEventListener('deviceready', () => {
+            console.log("App Ready");
+        });
+    </script>
+</body>
+</html>
